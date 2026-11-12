@@ -10,16 +10,30 @@ Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 """
 
 import os
-import shutil
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+MIN_CHARS = 1
+MAX_CHARS = 2000
+SUMMARY = Path(__file__).resolve().parent / "summary.txt"
+
+
+def read_summary() -> str:
+    """Read the summary as UTF-8 and refuse anything the gate would reject."""
+    text = SUMMARY.read_text(encoding="utf-8")
+    length = len(text)
+    if not MIN_CHARS <= length <= MAX_CHARS:
+        raise SystemExit(f"summary.txt holds {length} characters; the gate takes 1 to 2000")
+    if text.strip() == "":
+        raise SystemExit("summary.txt is only white space")
+    return text
 
 
 def main() -> None:
+    text = read_summary()
     out_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
     out_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(HERE / "summary.txt", out_dir / "entry.txt")
+    # write bytes unchanged: the judge reads exactly what summary.txt holds
+    (out_dir / "entry.txt").write_bytes(text.encode("utf-8"))
 
 
 if __name__ == "__main__":
